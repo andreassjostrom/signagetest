@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
+<title>Signage Test Card – 1920×1080</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: #0a0e1a;
+    font-family: 'Inter', sans-serif;
+    color: #ffffff;
+  }
+
+  .screen {
+    width: 1920px;
+    height: 1080px;
+    position: relative;
+    background: linear-gradient(135deg, #0a1628 0%, #0d2137 40%, #0e2a4a 100%);
+  }
+
+  /* Corner markers — if you can see all 4, nothing is cropped */
+  .corner {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 3px solid #12ABDB;
+  }
+  .corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+  .corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+  .corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+  /* Corner pixel labels */
+  .corner-label {
+    position: absolute;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    font-weight: 400;
+  }
+  .corner-label.tl { top: 8px; left: 8px; }
+  .corner-label.tr { top: 8px; right: 8px; text-align: right; }
+  .corner-label.bl { bottom: 8px; left: 8px; }
+  .corner-label.br { bottom: 8px; right: 8px; text-align: right; }
+
+  /* Edge midpoint markers */
+  .edge-mark {
+    position: absolute;
+    background: rgba(18,171,219,0.4);
+  }
+  .edge-mark.top    { top: 0; left: 50%; width: 2px; height: 30px; transform: translateX(-50%); }
+  .edge-mark.bottom { bottom: 0; left: 50%; width: 2px; height: 30px; transform: translateX(-50%); }
+  .edge-mark.left   { left: 0; top: 50%; width: 30px; height: 2px; transform: translateY(-50%); }
+  .edge-mark.right  { right: 0; top: 50%; width: 30px; height: 2px; transform: translateY(-50%); }
+
+  /* Center crosshair */
+  .crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+  }
+  .crosshair::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(18,171,219,0.5);
+  }
+  .crosshair::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background: rgba(18,171,219,0.5);
+  }
+  .crosshair-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(18,171,219,0.5);
+    border-radius: 50%;
+  }
+
+  /* Center content */
+  .center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 2;
+  }
+
+  .title {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    background: linear-gradient(90deg, #0070AD, #12ABDB);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    font-size: 22px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+
+  .resolution-box {
+    display: inline-block;
+    padding: 16px 48px;
+    border: 2px solid #0070AD;
+    border-radius: 8px;
+    margin-bottom: 32px;
+  }
+
+  .resolution-designed {
+    font-size: 18px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+  }
+
+  .resolution-value {
+    font-size: 48px;
+    font-weight: 700;
+    color: #12ABDB;
+  }
+
+  .viewport-info {
+    margin-top: 24px;
+    padding: 12px 32px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .viewport-label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 4px;
+  }
+
+  .viewport-live {
+    font-size: 28px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .match-indicator {
+    margin-top: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 8px 24px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .match-yes {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  .match-no {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  /* Gradient border line at bottom */
+  .bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #0070AD, #12ABDB, #0070AD);
+  }
+
+  /* Timestamp */
+  .timestamp {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    color: rgba(255,255,255,0.25);
+  }
+</style>
+</head>
+<body>
+  <div class="screen">
+    <!-- Corner markers -->
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <div class="corner-label tl">0, 0</div>
+    <div class="corner-label tr">1920, 0</div>
+    <div class="corner-label bl">0, 1080</div>
+    <div class="corner-label br">1920, 1080</div>
+
+    <!-- Edge midpoints -->
+    <div class="edge-mark top"></div>
+    <div class="edge-mark bottom"></div>
+    <div class="edge-mark left"></div>
+    <div class="edge-mark right"></div>
+
+    <!-- Center crosshair -->
+    <div class="crosshair">
+      <div class="crosshair-circle"></div>
+    </div>
+
+    <!-- Main content -->
+    <div class="center">
+      <div class="title">SIGNAGE TEST CARD</div>
+      <div class="subtitle">TEOS &bull; Qbic BXP-100</div>
+
+      <div class="resolution-box">
+        <div class="resolution-designed">Designed for</div>
+        <div class="resolution-value">1920 × 1080</div>
+      </div>
+
+      <div class="viewport-info">
+        <div class="viewport-label">Actual browser viewport</div>
+        <div class="viewport-live" id="viewport">detecting…</div>
+      </div>
+
+      <div id="match" class="match-indicator" style="visibility: hidden;"></div>
+    </div>
+
+    <div class="bottom-bar"></div>
+    <div class="timestamp" id="ts"></div>
+  </div>
+
+  <script>
+    function update() {
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      document.getElementById('viewport').textContent = w + ' × ' + h;
+
+      var el = document.getElementById('match');
+      el.style.visibility = 'visible';
+      if (w === 1920 && h === 1080) {
+        el.textContent = '✓ PIXEL-PERFECT MATCH';
+        el.className = 'match-indicator match-yes';
+      } else {
+        el.textContent = '✗ MISMATCH — expected 1920×1080';
+        el.className = 'match-indicator match-no';
+      }
+
+      var now = new Date();
+      document.getElementById('ts').textContent =
+        'Last updated: ' + now.toLocaleString() + ' — refreshes every 5s';
+    }
+
+    update();
+    setInterval(update, 5000);
+  </script>
+</body>
+</html>
