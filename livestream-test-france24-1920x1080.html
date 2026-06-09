@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
+<title>Live Stream Signage – 1920×1080</title>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: #000;
+  }
+  iframe {
+    width: 1920px;
+    height: 1080px;
+    border: none;
+    display: block;
+  }
+</style>
+</head>
+<body>
+  <!-- Option A: France 24 direct embed (no YouTube UI, cleanest) -->
+  <iframe
+    src="https://embed.france24.com/en/live"
+    allow="autoplay; encrypted-media"
+    allowfullscreen>
+  </iframe>
+
+  <!-- Option B: YouTube embed (uncomment below, comment out Option A)
+  <iframe
+    src="https://www.youtube.com/embed/HvZt-nh9sGg?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&loop=1"
+    allow="autoplay; encrypted-media"
+    allowfullscreen>
+  </iframe>
+  -->
+</body>
+</html>
