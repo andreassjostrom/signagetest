@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
+<title>Video Signage Test – 1920×1080</title>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: #000;
+  }
+  video {
+    width: 1920px;
+    height: 1080px;
+    display: block;
+    object-fit: fill;
+  }
+</style>
+</head>
+<body>
+  <video autoplay loop muted playsinline>
+    <source src="test-video-1920x1080.mp4" type="video/mp4">
+  </video>
+</body>
+</html>
