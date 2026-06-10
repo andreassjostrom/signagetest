@@ -31,7 +31,7 @@
     var newFileDetected = false;
 
     function checkForNewFile() {
-      fetch('content.mp4', { method: 'HEAD', cache: 'no-store' })
+      fetch('test-video-1080x3840.mp4', { method: 'HEAD', cache: 'no-store' })
         .then(function(resp) {
           var tag = resp.headers.get('etag') || resp.headers.get('last-modified') || resp.headers.get('content-length');
           if (currentTag === null) {
