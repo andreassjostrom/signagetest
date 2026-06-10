@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Signage – 1080×1920</title>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+  }
+  video {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    object-fit: fill;
+  }
+</style>
+</head>
+<body>
+  <video id="player" autoplay muted playsinline>
+    <source src="content.mp4" type="video/mp4">
+  </video>
+
+  <script>
+    var video = document.getElementById('player');
+    var currentTag = null;
+    var newFileDetected = false;
+
+    function checkForNewFile() {
+      fetch('content.mp4', { method: 'HEAD', cache: 'no-store' })
+        .then(function(resp) {
+          var tag = resp.headers.get('etag') || resp.headers.get('last-modified') || resp.headers.get('content-length');
+          if (currentTag === null) {
+            currentTag = tag;
+          } else if (tag !== currentTag) {
+            currentTag = tag;
+            newFileDetected = true;
+          }
+        })
+        .catch(function() {});
+    }
+
+    video.loop = false;
+    video.addEventListener('ended', function() {
+      if (newFileDetected) {
+        video.src = 'content.mp4?t=' + Date.now();
+        newFileDetected = false;
+      }
+      video.play();
+    });
+
+    setTimeout(checkForNewFile, 5000);
+    setInterval(checkForNewFile, 30000);
+  </script>
+</body>
+</html>
