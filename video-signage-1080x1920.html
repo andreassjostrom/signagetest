@@ -31,6 +31,7 @@
       video: 'content.mp4',
       image: 'content.jpg'
     };
+    var POLL_INTERVAL = 30000;
 
     var player = document.getElementById('player');
     var image = document.getElementById('image');
@@ -39,15 +40,18 @@
     var currentTag = null;
     var pendingSwap = null;
 
+    // Cache-bust the HEAD request URL to bypass CDN caching
+    // Combine all available headers into one fingerprint
     function headRequest(url) {
-      return fetch(url, { method: 'HEAD', cache: 'no-store' })
+      return fetch(url + '?_=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
         .then(function(resp) {
           if (!resp.ok) return null;
-          // content-length is stable across CDN edges; etag can vary
-          var tag = resp.headers.get('content-length')
-            || resp.headers.get('last-modified')
-            || resp.headers.get('etag');
-          return tag;
+          var parts = [
+            resp.headers.get('content-length') || '',
+            resp.headers.get('last-modified') || '',
+            resp.headers.get('etag') || ''
+          ];
+          return parts.join('|');
         })
         .catch(function() { return null; });
     }
@@ -92,18 +96,18 @@
           return;
         }
 
-        // Same type, same file — do nothing
+        // Same type, same fingerprint — do nothing
         if (useType === currentType && useTag === currentTag) return;
 
-        // Type changed to image, or image file updated
-        if (useType === 'image' && (currentType !== 'image' || useTag !== currentTag)) {
+        // Switch to image or update image — immediate
+        if (useType === 'image') {
           currentType = 'image';
           currentTag = useTag;
           showImage(true);
           return;
         }
 
-        // Image removed, video available
+        // Image removed, video available — immediate
         if (currentType === 'image' && useType === 'video') {
           currentType = 'video';
           currentTag = useTag;
@@ -130,7 +134,7 @@
     });
 
     setTimeout(checkForContent, 1000);
-    setInterval(checkForContent, 30000);
+    setInterval(checkForContent, POLL_INTERVAL);
   </script>
 </body>
 </html>
