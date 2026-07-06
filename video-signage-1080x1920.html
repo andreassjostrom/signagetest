@@ -48,8 +48,7 @@
           if (!resp.ok) return null;
           var parts = [
             resp.headers.get('content-length') || '',
-            resp.headers.get('last-modified') || '',
-            resp.headers.get('etag') || ''
+            resp.headers.get('last-modified') || ''
           ];
           return parts.join('|');
         })
