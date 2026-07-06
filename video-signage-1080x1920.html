@@ -35,20 +35,18 @@
     var player = document.getElementById('player');
     var image = document.getElementById('image');
 
-    var currentType = null;   // 'video' or 'image'
-    var currentTag = null;    // etag/last-modified of active file
-    var pendingType = null;
-    var pendingTag = null;
+    var currentType = null;
+    var currentTag = null;
+    var pendingSwap = null;
 
-    function getFileInfo(url) {
+    function headRequest(url) {
       return fetch(url, { method: 'HEAD', cache: 'no-store' })
         .then(function(resp) {
           if (!resp.ok) return null;
           var tag = resp.headers.get('etag')
             || resp.headers.get('last-modified')
             || resp.headers.get('content-length');
-          var modified = resp.headers.get('last-modified');
-          return { tag: tag, modified: modified ? new Date(modified).getTime() : 0 };
+          return tag;
         })
         .catch(function() { return null; });
     }
@@ -73,76 +71,63 @@
 
     function checkForContent() {
       Promise.all([
-        getFileInfo(MEDIA.video),
-        getFileInfo(MEDIA.image)
+        headRequest(MEDIA.image),
+        headRequest(MEDIA.video)
       ]).then(function(results) {
-        var vid = results[0];
-        var img = results[1];
+        var imgTag = results[0];
+        var vidTag = results[1];
 
-        // Determine which file to use: newest wins, video wins ties
-        var useType = null;
-        var useTag = null;
+        // Image wins if it exists; otherwise fall back to video
+        var useType = imgTag ? 'image' : (vidTag ? 'video' : null);
+        var useTag = imgTag || vidTag;
 
-        if (vid && img) {
-          useType = (img.modified > vid.modified) ? 'image' : 'video';
-          useTag = (useType === 'video') ? vid.tag : img.tag;
-        } else if (vid) {
-          useType = 'video';
-          useTag = vid.tag;
-        } else if (img) {
-          useType = 'image';
-          useTag = img.tag;
-        } else {
-          return; // neither file found, do nothing
-        }
+        if (!useType) return;
 
         // First load
         if (currentType === null) {
           currentType = useType;
           currentTag = useTag;
-          if (useType === 'video') {
-            showVideo(false);
-          } else {
-            showImage(false);
-          }
+          if (useType === 'image') showImage(false);
+          else showVideo(false);
           return;
         }
 
-        // Content changed — type switch or file update
-        if (useType !== currentType || useTag !== currentTag) {
-          if (useType === 'image') {
-            // Images swap immediately
-            currentType = 'image';
-            currentTag = useTag;
-            showImage(true);
-          } else {
-            // Videos: flag for swap at next loop point
-            pendingType = 'video';
-            pendingTag = useTag;
-          }
+        // No change
+        if (useType === currentType && useTag === currentTag) return;
+
+        // Switching to image or updating image — swap immediately
+        if (useType === 'image') {
+          currentType = 'image';
+          currentTag = useTag;
+          showImage(true);
+          return;
+        }
+
+        // Switching to video or updating video — wait for loop end
+        if (currentType === 'video' && useType === 'video' && useTag !== currentTag) {
+          pendingSwap = { type: 'video', tag: useTag };
+        } else if (currentType === 'image' && useType === 'video') {
+          // Image removed, video available — switch immediately
+          currentType = 'video';
+          currentTag = useTag;
+          showVideo(true);
         }
       });
     }
 
-    // Manual loop handling — swap at the natural seam
+    // Manual loop — swap video at the natural seam
     player.loop = false;
     player.addEventListener('ended', function() {
-      if (pendingType) {
-        currentType = pendingType;
-        currentTag = pendingTag;
-        pendingType = null;
-        pendingTag = null;
-        if (currentType === 'video') {
-          showVideo(true);
-        } else {
-          showImage(true);
-        }
+      if (pendingSwap) {
+        currentType = pendingSwap.type;
+        currentTag = pendingSwap.tag;
+        pendingSwap = null;
+        showVideo(true);
       } else {
         player.play();
       }
     });
 
-    // Start checking
     setTimeout(checkForContent, 1000);
     setInterval(checkForContent, 30000);
   </script>
