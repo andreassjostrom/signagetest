@@ -43,9 +43,10 @@
       return fetch(url, { method: 'HEAD', cache: 'no-store' })
         .then(function(resp) {
           if (!resp.ok) return null;
-          var tag = resp.headers.get('etag')
+          // content-length is stable across CDN edges; etag can vary
+          var tag = resp.headers.get('content-length')
             || resp.headers.get('last-modified')
-            || resp.headers.get('content-length');
+            || resp.headers.get('etag');
           return tag;
         })
         .catch(function() { return null; });
@@ -77,7 +78,6 @@
         var imgTag = results[0];
         var vidTag = results[1];
 
-        // Image wins if it exists; otherwise fall back to video
         var useType = imgTag ? 'image' : (vidTag ? 'video' : null);
         var useTag = imgTag || vidTag;
 
@@ -92,34 +92,35 @@
           return;
         }
 
-        // No change
+        // Same type, same file — do nothing
         if (useType === currentType && useTag === currentTag) return;
 
-        // Switching to image or updating image — swap immediately
-        if (useType === 'image') {
+        // Type changed to image, or image file updated
+        if (useType === 'image' && (currentType !== 'image' || useTag !== currentTag)) {
           currentType = 'image';
           currentTag = useTag;
           showImage(true);
           return;
         }
 
-        // Switching to video or updating video — wait for loop end
-        if (currentType === 'video' && useType === 'video' && useTag !== currentTag) {
-          pendingSwap = { type: 'video', tag: useTag };
-        } else if (currentType === 'image' && useType === 'video') {
-          // Image removed, video available — switch immediately
+        // Image removed, video available
+        if (currentType === 'image' && useType === 'video') {
           currentType = 'video';
           currentTag = useTag;
           showVideo(true);
+          return;
+        }
+
+        // Video file updated — wait for loop end
+        if (useType === 'video' && currentType === 'video' && useTag !== currentTag) {
+          pendingSwap = { tag: useTag };
         }
       });
     }
 
-    // Manual loop — swap video at the natural seam
     player.loop = false;
     player.addEventListener('ended', function() {
       if (pendingSwap) {
-        currentType = pendingSwap.type;
         currentTag = pendingSwap.tag;
         pendingSwap = null;
         showVideo(true);
