@@ -12,49 +12,139 @@
     overflow: hidden;
     background: #000;
   }
-  video {
+  video, img {
     width: 1080px;
     height: 1920px;
     display: block;
     object-fit: fill;
   }
+  #image { display: none; }
+  #player { display: none; }
 </style>
 </head>
 <body>
-  <video id="player" autoplay muted playsinline>
-    <source src="content.mp4" type="video/mp4">
-  </video>
+  <video id="player" autoplay muted playsinline></video>
+  <img id="image" src="" alt="">
 
   <script>
-    var video = document.getElementById('player');
-    var currentTag = null;
-    var newFileDetected = false;
+    var MEDIA = {
+      video: 'content.mp4',
+      image: 'content.jpg'
+    };
 
-    function checkForNewFile() {
-      fetch('content.mp4', { method: 'HEAD', cache: 'no-store' })
+    var player = document.getElementById('player');
+    var image = document.getElementById('image');
+
+    var currentType = null;   // 'video' or 'image'
+    var currentTag = null;    // etag/last-modified of active file
+    var pendingType = null;
+    var pendingTag = null;
+
+    function getFileInfo(url) {
+      return fetch(url, { method: 'HEAD', cache: 'no-store' })
         .then(function(resp) {
-          var tag = resp.headers.get('etag') || resp.headers.get('last-modified') || resp.headers.get('content-length');
-          if (currentTag === null) {
-            currentTag = tag;
-          } else if (tag !== currentTag) {
-            currentTag = tag;
-            newFileDetected = true;
-          }
+          if (!resp.ok) return null;
+          var tag = resp.headers.get('etag')
+            || resp.headers.get('last-modified')
+            || resp.headers.get('content-length');
+          var modified = resp.headers.get('last-modified');
+          return { tag: tag, modified: modified ? new Date(modified).getTime() : 0 };
         })
-        .catch(function() {});
+        .catch(function() { return null; });
     }
 
-    video.loop = false;
-    video.addEventListener('ended', function() {
-      if (newFileDetected) {
-        video.src = 'content.mp4?t=' + Date.now();
-        newFileDetected = false;
+    function showVideo(bustCache) {
+      var src = MEDIA.video + (bustCache ? '?t=' + Date.now() : '');
+      image.style.display = 'none';
+      image.src = '';
+      player.src = src;
+      player.style.display = 'block';
+      player.play();
+    }
+
+    function showImage(bustCache) {
+      var src = MEDIA.image + (bustCache ? '?t=' + Date.now() : '');
+      player.style.display = 'none';
+      player.pause();
+      player.removeAttribute('src');
+      image.src = src;
+      image.style.display = 'block';
+    }
+
+    function checkForContent() {
+      Promise.all([
+        getFileInfo(MEDIA.video),
+        getFileInfo(MEDIA.image)
+      ]).then(function(results) {
+        var vid = results[0];
+        var img = results[1];
+
+        // Determine which file to use: newest wins, video wins ties
+        var useType = null;
+        var useTag = null;
+
+        if (vid && img) {
+          useType = (img.modified > vid.modified) ? 'image' : 'video';
+          useTag = (useType === 'video') ? vid.tag : img.tag;
+        } else if (vid) {
+          useType = 'video';
+          useTag = vid.tag;
+        } else if (img) {
+          useType = 'image';
+          useTag = img.tag;
+        } else {
+          return; // neither file found, do nothing
+        }
+
+        // First load
+        if (currentType === null) {
+          currentType = useType;
+          currentTag = useTag;
+          if (useType === 'video') {
+            showVideo(false);
+          } else {
+            showImage(false);
+          }
+          return;
+        }
+
+        // Content changed — type switch or file update
+        if (useType !== currentType || useTag !== currentTag) {
+          if (useType === 'image') {
+            // Images swap immediately
+            currentType = 'image';
+            currentTag = useTag;
+            showImage(true);
+          } else {
+            // Videos: flag for swap at next loop point
+            pendingType = 'video';
+            pendingTag = useTag;
+          }
+        }
+      });
+    }
+
+    // Manual loop handling — swap at the natural seam
+    player.loop = false;
+    player.addEventListener('ended', function() {
+      if (pendingType) {
+        currentType = pendingType;
+        currentTag = pendingTag;
+        pendingType = null;
+        pendingTag = null;
+        if (currentType === 'video') {
+          showVideo(true);
+        } else {
+          showImage(true);
+        }
+      } else {
+        player.play();
       }
-      video.play();
     });
 
-    setTimeout(checkForNewFile, 5000);
-    setInterval(checkForNewFile, 30000);
+    // Start checking
+    setTimeout(checkForContent, 1000);
+    setInterval(checkForContent, 30000);
   </script>
 </body>
 </html>
